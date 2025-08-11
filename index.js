@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 4000
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // Allow only your Next.js frontend
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
