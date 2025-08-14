@@ -159,6 +159,7 @@ router.get("/", async (req, res) => {
             _2,
             _3,
             _4,
+            _5,
             fuelRaw,
           ] = rawData.split(",")
 

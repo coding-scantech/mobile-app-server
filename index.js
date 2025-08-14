@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 
 import trackRouter from "./routes/track.js"
 import devicesRouter from "./routes/devices.js"
+import playbackRouter from "./routes/playback.js"
 
 dotenv.config()
 
@@ -24,6 +25,7 @@ app.use(express.json())
 // Register routes
 app.use("/track", trackRouter)
 app.use("/devices", devicesRouter)
+app.use("/playback", playbackRouter)
 
 // Default route
 app.get("/", (req, res) => {

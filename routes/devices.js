@@ -86,6 +86,7 @@ router.get("/", async (req, res) => {
             __2,
             __3,
             __4,
+            __5,
             fuelRaw,
           ] = lastLocStr.split(",")
 
@@ -105,7 +106,7 @@ router.get("/", async (req, res) => {
             speed: Number(speed),
             angle: Number(angle),
             accStatus: acc === "11" ? "ON" : "OFF",
-            fuel: Number(fuelRaw?.replace("L;", "").trim()),
+            fuel: fuelRaw ? Number(fuelRaw.replace("L;", "").trim()) : null,
             timestamp,
             online: isOnline(timestamp),
           }
