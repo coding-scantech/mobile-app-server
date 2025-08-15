@@ -57,17 +57,9 @@ router.get("/", async (req, res) => {
       .split(";")
       .filter((line) => line.trim() !== "")
       .map((record) => {
-        const [
-          timestamp,
-          longitude,
-          latitude,
-          speed,
-          angle,
-          alarmType,
-          _notImp1,
-          _notImp2,
-          _notImp3,
-        ] = record.split(",").map((v) => v.trim())
+        const [timestamp, longitude, latitude, speed, angle, alarmType] = record
+          .split(",")
+          .map((v) => v.trim())
 
         return {
           timestamp,

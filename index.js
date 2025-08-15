@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import trackRouter from "./routes/track.js"
 import devicesRouter from "./routes/devices.js"
 import playbackRouter from "./routes/playback.js"
+import alertsRouter from "./routes/alerts.js"
 
 dotenv.config()
 
@@ -26,6 +27,7 @@ app.use(express.json())
 app.use("/track", trackRouter)
 app.use("/devices", devicesRouter)
 app.use("/playback", playbackRouter)
+app.use("/alerts", alertsRouter)
 
 // Default route
 app.get("/", (req, res) => {
