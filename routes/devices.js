@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
   try {
     // Step 1: Get all vehicles
     const vehicleListXml = await fetchXml(
-      `${process.env.BASE_URL}/AndroidInterface.asmx/GetVehicleByGroupForMobile`,
+      `${process.env.BASE_URL}AndroidInterface.asmx/GetVehicleByGroupForMobile`,
       { email: "fuel@123.com" }
     )
 
@@ -45,7 +45,7 @@ router.get("/", async (req, res) => {
         try {
           // Fetch details (Request 1)
           const detailXml = await fetchXml(
-            `${process.env.BASE_URL}/AndroidInterface.asmx/GetVehDetailsClick`,
+            `${process.env.BASE_URL}AndroidInterface.asmx/GetVehDetailsClick`,
             { vehID: vehicle.vehId }
           )
           const detailStr = detailXml.string._ || detailXml.string
