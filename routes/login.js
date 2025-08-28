@@ -38,6 +38,8 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" })
     }
 
+    const [userId, name] = details.split(",")
+
     // 2. Check if Client collection exists
     let client = await Client.findOne({ email: account, pwd })
 
@@ -46,7 +48,9 @@ router.post("/", async (req, res) => {
       client = new Client({
         pwd,
         email: account,
+        name,
       })
+
       await client.save()
     }
 
@@ -55,6 +59,7 @@ router.post("/", async (req, res) => {
       id: client._id,
       email: client.email,
       fcm_tokens: client.fcm_tokens,
+      name: client.name,
     })
   } catch (err) {
     console.error(err)

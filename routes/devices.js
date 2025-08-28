@@ -21,16 +21,17 @@ function isOnline(timestampStr) {
   const lastTime = new Date(timestampStr)
   const now = new Date()
   const diffMs = now - lastTime
-  return diffMs <= 5 * 60 * 1000 // 5 minutes
+  return diffMs <= 1 * 60 * 1000 // 1 minutes
 }
 
 // GET /devices
 router.get("/", async (req, res) => {
+  const { email } = req.query
   try {
     // Step 1: Get all vehicles
     const vehicleListXml = await fetchXml(
       `${process.env.BASE_URL}AndroidInterface.asmx/GetVehicleByGroupForMobile`,
-      { email: "fuel@123.com" }
+      { email }
     )
 
     const rawVehicles = vehicleListXml.ArrayOfString.string
