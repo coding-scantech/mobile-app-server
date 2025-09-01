@@ -168,6 +168,8 @@ const constructNotificationBody = (alarm) => {
 async function sendPushNotification(alarm, token) {
   const { title, body, link } = constructNotificationBody(alarm)
 
+  console.log(title, body, link)
+
   const message = {
     validate_only: false,
     message: {
@@ -182,8 +184,8 @@ async function sendPushNotification(alarm, token) {
     },
   }
 
-  await axios.post(
-    `https://fcm.googleapis.com/v1/projects/${process.env.FCM_PROJECT_ID}/messages:send`,
+  const response = await axios.post(
+    `https://fcm.googleapis.com/v1/projects/${serviceKey.project_id}/messages:send`,
     message,
     {
       headers: {
@@ -192,6 +194,8 @@ async function sendPushNotification(alarm, token) {
       },
     }
   )
+
+  console.log(" FCM Response:", response.data)
 }
 
 const notificationWorker = new Worker(
