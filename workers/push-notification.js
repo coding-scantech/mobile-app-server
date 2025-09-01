@@ -6,9 +6,22 @@ import { GoogleAuth } from "google-auth-library"
 import { Client } from "../models/Client.js"
 import moment from "moment/moment.js"
 
-const serviceKey = JSON.parse(
-  readFileSync("./fcm-service-account.json", "utf8")
-)
+const serviceKey = {
+  type: "service_account",
+  project_id: "scantech-55f5b",
+  private_key_id: "75d84c67ceda9a7d500d7fd20bcd6c4a308c90ff",
+  private_key:
+    "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDBdFmGhmzdNhqq\nA8EcUa4xZxmqz2daCstvWdo1/KeBjM9xzh/YqvS86RVTndrHnnyKGlqIF54z+CXQ\ncxpf8a+orJtjn80FWQ95PhDzR+BolyqRaIyDBq1OgxIh1HQXj9dMZP4WjWuApq1G\nV0NDLK+hIc9ydinbqU2esrvoC6q0B6Ke58mgoCr+iGBQPPU/zeWvHGtMnWjBBCKZ\nhPRAcl9/vC9DDc0nkG4JDiktLmfyeIPdHJdj/Puz3BRKglCk7oEuX1YnUdo7516t\noa9gUzW19HaDUdzr0+sxGmoscrbcGEzDrQEPyhyNfRT6BMw1z/BIasI+h5QhZHQg\nqIhPWJqfAgMBAAECggEAAZcpLWs6qYOxyFlboTNlovX1Jsuf9iuqx6jtuSbACaYg\n6MqUdyPUDwuLYCZYNHihD0KvXD46smWvE3Fh5LS778kwu9wjqwaMnSI4nRHiohXO\n2KuU89kgyCwKYykzG+kY8xVW3KzV0e1gkp/5k7V117p8s7UXiClLDwlNYQiqSmyv\nDAl8RCKJtwPu5e6MK+qk2zfYjklzJGsg+XA1vsFvArhNgLxOuqGOnIMG3gRZhq3F\nVVN26iKzIkT+lYX6ef2IRPp0fiI/uckzw6B0fXxb+kc3b5bef5CMt2VNK9vlUaxr\nZthdK/3gB1t6yHcNrcPGTykXf6wZDGzD3Sqg7cD50QKBgQD0beaJq9B7DW10I5We\ntguFRVkGOlvROXXIcUEyctWjTJekWT3uUdlxKqHcCPV1WcgrH1HM/Uy3Gl5bIhwD\nu7dFNzfD2aZjvkf5BYSjzfIYEIQJn+CEDGREx32SVauJQ1BDxtU8svWT9Oc1//FB\nmr1EtjlwW3XnmKOWLUU90Ao/cQKBgQDKnLbp2NXmD++i1QA/IMDbroYCo7IxdXtz\n9vvMYcQGjoKHiF+4vpcYGdIlEGuHHRttJNf/folc08K45LzrSbwSen4YHjUF3rW9\nmWPf1XF4WQQ7rXHH2HNyB10EUI93s4yN3B2oKU/WKxDJwCJZHWge5G+c/tYM/d5Q\nubgAGuGTDwKBgQDd6s3NHoX4wpcmQ4x6/RL2m6CY6/EiwwVxx4mG8QWP7mEbIL7+\nmadOfINZz3RzZ+E5bYUKFMtKzpDuMsi2hv58xAZINVpA4qhbqavkQH3VZWFLj7D6\nknmSjIAwlMFZrRi5gFNneZ9HBqnIuCflBUVjlgIORauFamrTVSSxWymCsQKBgFoK\nvUs9XwnICUI/EMX9Q1gdvlaL8xQB1uRZXdudkyUqzh13YLrUkIdYakiofHDmYZrm\npctYq6kCPuY2WTLjaN55a3JCcmPybqgc9AK0c6H9RWFUGl2q9ts1JIRXXPrgY1Vj\n/hYOjflq2CIg7eLWq8AW2vdVVUEezV7oujnpuFfHAoGBAOfbYpnhlXX8lDKDWNKO\ne4krZpHF6jp7Qab2W/fxwotOilcgkCRKWkhnJ/BSR/z6MjkfhEkUN+wvioYa6gSs\naaQs3aZnrG+96kOwr/6sF45XcreBfuMmPMMpPxahFWxIYRDlOYf2pUVK+lvv18PF\nkpSZ4Rfavoos3iRPgG/5/4lc\n-----END PRIVATE KEY-----\n",
+  client_email:
+    "firebase-adminsdk-fbsvc@scantech-55f5b.iam.gserviceaccount.com",
+  client_id: "111501909043533821308",
+  auth_uri: "https://accounts.google.com/o/oauth2/auth",
+  token_uri: "https://oauth2.googleapis.com/token",
+  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+  client_x509_cert_url:
+    "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40scantech-55f5b.iam.gserviceaccount.com",
+  universe_domain: "googleapis.com",
+}
 
 const auth = new GoogleAuth({
   credentials: serviceKey,
@@ -228,4 +241,4 @@ notificationWorker.on("failed", (job, err) => {
   console.error(`❌ Notification job ${job.id} failed:`, err.message)
 })
 
-console.log("🚀 Notification detection worker started...")
+console.log("🚀 Notification worker started...")
