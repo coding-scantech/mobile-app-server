@@ -205,7 +205,7 @@ const notificationWorker = new Worker(
 
     // 1. Find the client who owns this vehicle
     const client = await Client.findOne({
-      "vehicles.veh_id": alarm.vehId,
+      "vehicles.device_serial": alarm.vehId,
     })
 
     if (!client) {
