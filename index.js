@@ -13,6 +13,10 @@ import alertsRouter from "./routes/alerts.js"
 import { startFuelMonitor } from "./services/fuelMonitoring.js"
 import { FleetManager } from "./services/FleetManager.js"
 
+import "./workers/alarm-detection.js"
+import "./workers/push-notification.js"
+import "./udp-listener.js"
+
 dotenv.config()
 
 const app = express()
@@ -32,7 +36,6 @@ app.use(express.json())
 // Register routes
 app.use("/login", loginRouter)
 app.use("/registerFCM", registerFCMRouter)
-
 app.use("/track", trackRouter)
 app.use("/devices", devicesRouter)
 app.use("/playback", playbackRouter)
@@ -45,18 +48,14 @@ app.get("/", (req, res) => {
 
 // Connect to MongoDB and start server
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ Connected to MongoDB")
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`)
-      startFuelMonitor()
     })
   })
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err)
-    process.exit(1) // stop if DB fails
+    process.exit(1)
   })

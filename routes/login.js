@@ -40,8 +40,22 @@ router.post("/", async (req, res) => {
 
     const [userId, name] = details.split(",")
 
+    const vehiclesXml = await fetchXml(
+      `${process.env.BASE_URL}AndroidInterface.asmx/GetVehicleByGroupForMobile`,
+      { email: account }
+    )
+
+    const vehicleStrings = vehiclesXml?.ArrayOfString?.string || []
+
+    const vehiclesParsed = vehicleStrings.map((entry) => {
+      const [veh_id, number_plate, device_serial] = entry.split(",")
+      return { veh_id, number_plate, device_serial }
+    })
+
     // 2. Check if Client collection exists
-    let client = await Client.findOne({ email: account, pwd })
+    let client = await Client.findOne({ email: account })
+
+    // Find the vehicles using the email=account
 
     if (!client) {
       // Create new if not exists
@@ -49,17 +63,21 @@ router.post("/", async (req, res) => {
         pwd,
         email: account,
         name,
+        vehicles: vehiclesParsed,
       })
-
-      await client.save()
+    } else {
+      client.vehicles = vehiclesParsed
+      client.name = name
+      client.pwd = pwd
     }
+
+    await client.save()
 
     // 3. Return id + email
     return res.json({
       id: client._id,
-      email: client.email,
-      fcm_tokens: client.fcm_tokens,
       name: client.name,
+      email: client.email,
     })
   } catch (err) {
     console.error(err)
