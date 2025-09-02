@@ -204,6 +204,9 @@ const notificationWorker = new Worker(
     const alarm = job.data
 
     // 1. Find the client who owns this vehicle
+
+    console.log(alarm)
+
     const client = await Client.findOne({
       "vehicles.device_serial": alarm.vehId,
     })
@@ -214,7 +217,7 @@ const notificationWorker = new Worker(
     }
 
     // 2. Find the vehicle object to get number_plate
-    const vehicle = client.vehicles.find((v) => v.veh_id === alarm.vehId)
+    const vehicle = client.vehicles.find((v) => v.device_serial === alarm.vehId)
     const number_plate = vehicle?.number_plate || "Unknown"
 
     const enrichedAlarm = {
