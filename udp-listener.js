@@ -71,7 +71,6 @@ function parseGISPosReq(buf) {
 
 //  On new packet
 client.on("message", async (msg, rinfo) => {
-  console.log(msg)
   if (msg.length > 4) {
     try {
       const alarm = parseGISPosReq(msg)

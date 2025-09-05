@@ -22,14 +22,6 @@ const serviceKey = {
   universe_domain: "googleapis.com",
 }
 
-const auth = new GoogleAuth({
-  credentials: serviceKey,
-  scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
-})
-
-const client = await auth.getClient()
-const accessToken = await client.getAccessToken()
-
 const alarmTemplates = {
   129: {
     title: "SOS Alert",
@@ -113,7 +105,13 @@ const constructNotificationBody = (alarm) => {
 async function sendPushNotification(alarm, token) {
   const { title, body, link } = constructNotificationBody(alarm)
 
-  console.log(title, body, link)
+  const auth = new GoogleAuth({
+    credentials: serviceKey,
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+  })
+
+  const client = await auth.getClient()
+  const accessToken = await client.getAccessToken()
 
   const message = {
     validate_only: false,
