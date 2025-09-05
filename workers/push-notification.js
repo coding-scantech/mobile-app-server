@@ -1,7 +1,6 @@
 import { Worker } from "bullmq"
 import { connection } from "../redis.js"
 import axios from "axios"
-import { readFileSync } from "fs"
 import { GoogleAuth } from "google-auth-library"
 import { Client } from "../models/Client.js"
 import moment from "moment/moment.js"
@@ -32,22 +31,10 @@ const client = await auth.getClient()
 const accessToken = await client.getAccessToken()
 
 const alarmTemplates = {
-  1: {
+  129: {
     title: "SOS Alert",
     body: (v, t) =>
       `Your vehicle (${v}) sent an SOS alert at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  29: {
-    title: "SOS Alert",
-    body: (v, t) =>
-      `Your vehicle (${v}) sent an SOS alert at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  2: {
-    title: "Overspeed Alert",
-    body: (v, t) =>
-      `Your vehicle (${v}) exceeded the speed limit at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
   130: {
@@ -56,22 +43,10 @@ const alarmTemplates = {
       `Your vehicle (${v}) exceeded the speed limit at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
-  3: {
-    title: "Distance Alarm",
-    body: (v, t) =>
-      `Your vehicle (${v}) triggered a distance alarm at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
   131: {
-    title: "Distance Alarm",
+    title: "Geo-fence Alert",
     body: (v, t) =>
-      `Your vehicle (${v}) triggered a distance alarm at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  4: {
-    title: "GSM Signal Lost",
-    body: (v, t) =>
-      `Your vehicle (${v}) lost GSM signal at ${t}. Click to view location.`,
+      `Your vehicle (${v}) crossed the geofence at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
   132: {
@@ -80,46 +55,10 @@ const alarmTemplates = {
       `Your vehicle (${v}) lost GSM signal at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
-  9: {
-    title: "Power Cut",
-    body: (v, t) =>
-      `Your vehicle (${v}) power supply was cut at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
   137: {
-    title: "Power Cut",
+    title: "Power Disconnection",
     body: (v, t) =>
       `Your vehicle (${v}) power supply was cut at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  10: {
-    title: "Low Power",
-    body: (v, t) =>
-      `Your vehicle (${v}) battery is low as of ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  138: {
-    title: "Low Power",
-    body: (v, t) =>
-      `Your vehicle (${v}) battery is low as of ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  15: {
-    title: "Tamper Alert",
-    body: (v, t) =>
-      `Tamper detected on vehicle (${v}) at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  143: {
-    title: "Tamper Alert",
-    body: (v, t) =>
-      `Tamper detected on vehicle (${v}) at ${t}. Click to view location.`,
-    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
-  },
-  16: {
-    title: "GPS Signal Lost",
-    body: (v, t) =>
-      `Your vehicle (${v}) lost GPS signal at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
   144: {
@@ -134,17 +73,23 @@ const alarmTemplates = {
       `Your vehicle (${v}) reported normal status at ${t}. Click to view location.`,
     link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
-
-  ACC_ON: {
-    title: "Engine Started",
+  145: {
+    title: "Fuel Alert",
+    body: (v, t) =>
+      `Your vehicle (${v}) fuel dropped by 10% in 60 seconds ${t}. Click to view location.`,
+    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
+  },
+  146: {
+    title: "Engine ON",
     body: (v, t) =>
       `Your vehicle (${v}) engine was started at ${t}. Click to view location.`,
+    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
-
-  ACC_OFF: {
-    title: "Engine Stopped",
+  147: {
+    title: "Engine OFF",
     body: (v, t) =>
-      `Your vehicle (${v}) engine was switched off at ${t}. Click to view location.`,
+      `Your vehicle (${v}) engine was stopped at ${t}. Click to view location.`,
+    link: (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`,
   },
 }
 
@@ -156,12 +101,12 @@ const constructNotificationBody = (alarm) => {
   )
 
   // Pick template from table
-  const template = alarmTemplates[alarm?.type]
+  const template = alarmTemplates[alarm?.alarm]
 
   return {
     title: template.title,
     body: template.body(number_plate, formattedTime),
-    link: template.link(alarm?.location?.lat, alarm?.location?.lng),
+    link: template.link(alarm?.lat, alarm?.lng),
   }
 }
 
@@ -226,6 +171,10 @@ const notificationWorker = new Worker(
     }
 
     client.alerts.push(enrichedAlarm)
+
+    if (client.alerts.length > 200) {
+      client.alerts = client.alerts.slice(-200) // keep only last 200
+    }
 
     await client.save()
 

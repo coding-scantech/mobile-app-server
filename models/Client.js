@@ -26,4 +26,11 @@ const clientSchema = new mongoose.Schema({
   vehicles: [vehicleSchema],
 })
 
+clientSchema.pre("save", function (next) {
+  if (this.alerts.length > 200) {
+    this.alerts = this.alerts.slice(-200) // keep only last 200
+  }
+  next()
+})
+
 export const Client = mongoose.model("Client", clientSchema)

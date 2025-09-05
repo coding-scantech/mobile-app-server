@@ -10,7 +10,7 @@ const SERVER_PORT = process.env.SERVER_PORT
 
 // ---------- Bull setup -----------
 
-export const alarmQueue = new Queue("alarmQueue", { connection })
+export const notificationQueue = new Queue("notificationQueue", { connection })
 
 //  ------------- UDP scocket setup -----------------
 const client = dgram.createSocket("udp4")
@@ -29,7 +29,10 @@ function buildHandshakeReq() {
 function parseGISPosReq(buf) {
   let offset = 4
 
-  const acc = buf.readUInt8(offset)
+  // const acc = buf.readUInt8(offset)
+
+  const acc = ((buf.readUInt8(offset) >> 6) & 1) === 1 ? "ON" : "OFF"
+
   offset += 1
   const alarm = buf.readUInt8(offset)
   offset += 1
@@ -50,12 +53,7 @@ function parseGISPosReq(buf) {
     .replace(/\0/g, "")
   offset += ID_LEN
 
-  const time = buf.readInt32LE(offset)
-  offset += 4
-  const io = buf.readUInt8(offset)
-  offset += 1
-  const fuel = buf.readInt16LE(offset)
-  offset += 2
+  const time = Date.now()
 
   return {
     vehId,
@@ -66,7 +64,6 @@ function parseGISPosReq(buf) {
     angle,
     lng,
     lat,
-    fuel,
   }
 }
 
@@ -74,14 +71,15 @@ function parseGISPosReq(buf) {
 
 //  On new packet
 client.on("message", async (msg, rinfo) => {
+  console.log(msg)
   if (msg.length > 4) {
     try {
-      const packet = parseGISPosReq(msg)
+      const alarm = parseGISPosReq(msg)
 
       // Add to queue
-      console.log("📍:", packet)
+      console.log("📍:", alarm)
 
-      await alarmQueue.add("alarm", packet, {
+      await notificationQueue.add("notification", alarm, {
         removeOnComplete: true,
         removeOnFail: true,
       })
@@ -95,6 +93,7 @@ client.on("message", async (msg, rinfo) => {
 client.on("listening", () => {
   console.log("UDP client started. Sending handshake...")
   const handshake = buildHandshakeReq()
+
   client.send(
     handshake,
     0,
@@ -106,6 +105,21 @@ client.on("listening", () => {
       else console.log("Handshake sent, Bytes received :", bytes)
     }
   )
+
+  setInterval(() => {
+    const handshake = buildHandshakeReq()
+    client.send(
+      handshake,
+      0,
+      handshake.length,
+      SERVER_PORT,
+      SERVER_HOST,
+      (err, bytes) => {
+        if (err) console.error("Handshake resend error:", err)
+        else console.log("⏱️ Handshake resent, Bytes sent:", bytes)
+      }
+    )
+  }, 20000)
 })
 
 // Start socket

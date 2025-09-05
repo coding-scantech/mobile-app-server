@@ -9,11 +9,11 @@ import registerFCMRouter from "./routes/registerFCM.js"
 import trackRouter from "./routes/track.js"
 import devicesRouter from "./routes/devices.js"
 import playbackRouter from "./routes/playback.js"
-import alertsRouter from "./routes/alerts.js"
+import alertsRouter from "./routes/alertsDB.js"
+
 import { startFuelMonitor } from "./services/fuelMonitoring.js"
 import { FleetManager } from "./services/FleetManager.js"
 
-import "./workers/alarm-detection.js"
 import "./workers/push-notification.js"
 import "./udp-listener.js"
 
