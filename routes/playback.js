@@ -6,19 +6,13 @@ const router = express.Router()
 
 // Alarm type mapping
 const alarmMap = {
-  11: "ACC ON",
-  12: "ACC OFF",
-  128: "No Alarm",
-  2: "Speed Alarm",
-  30: "Speed Alarm",
-  1: "SOS Alarm",
-  129: "SOS Alarm",
-  9: "Power Alarm",
-  137: "Power Alarm",
-  10: "Power Low Alarm",
-  138: "Power Low Alarm",
-  15: "Tamper Alarm",
-  143: "Tamper Alarm",
+  129: "SOS alarm",
+  130: "Overspeed alarm",
+  131: "Geo-fence alarm alarm",
+  132: " GSM Signal lost alarm",
+  137: "Power disconnection alarm",
+  144: "GPS signal lost alarm",
+  145: "Fuel alarm",
 }
 
 router.get("/", async (req, res) => {
