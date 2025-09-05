@@ -1,13 +1,15 @@
 import mongoose from "mongoose"
 
 const alertSchema = new mongoose.Schema({
-  type: { type: String, required: true }, // e.g. "overspeed", "tamper", "low fuel"
-  time: { type: Date, required: true }, // when alert occurred
-  location: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true },
-  },
-  extra: { type: String }, // flexible field for extra info
+  vehId: { type: String },
+  time: { type: Number, required: true },
+  acc: { type: String, required: true },
+  alarm: { type: Number, required: true },
+  speed: { type: Number },
+  angle: { type: Number },
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+  number_plate: { type: String, required: true },
 })
 
 const vehicleSchema = new mongoose.Schema({
