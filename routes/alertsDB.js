@@ -18,7 +18,9 @@ router.get("/", async (req, res) => {
       return res.status(404).json({ error: "Client not found" })
     }
 
-    return res.json({ alerts: client.alerts })
+    const sortedAlerts = [...client.alerts].sort((a, b) => b.time - a.time)
+
+    return res.json({ alerts: sortedAlerts })
   } catch (err) {
     console.error("Error fetching alerts:", err)
     res.status(500).json({ error: "Server error" })
