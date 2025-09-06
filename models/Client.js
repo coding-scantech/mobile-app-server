@@ -16,6 +16,7 @@ const vehicleSchema = new mongoose.Schema({
   veh_id: { type: String, required: true },
   number_plate: { type: String, required: true },
   device_serial: { type: String, required: true },
+  next_service: { type: Date },
 })
 
 // Mongoose schema + model

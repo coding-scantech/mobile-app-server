@@ -6,9 +6,10 @@ const router = express.Router()
 
 // Alarm type mapping
 const alarmMap = {
+  12: "ACC OFF",
   129: "SOS alarm",
   130: "Overspeed alarm",
-  131: "Geo-fence alarm alarm",
+  131: "Geo-fence alarm",
   132: " GSM Signal lost alarm",
   137: "Power disconnection alarm",
   144: "GPS signal lost alarm",
@@ -30,7 +31,7 @@ router.get("/", async (req, res) => {
 
     // Send POST request
     const response = await fetch(
-      "http://www.scantech.top:8090/AndroidInterface.asmx/FillListView",
+      `${process.env.BASE_URL}AndroidInterface.asmx/FillListView`,
       {
         method: "POST",
         headers: {
@@ -63,7 +64,7 @@ router.get("/", async (req, res) => {
           },
           speed: parseFloat(speed),
           angle: parseInt(angle),
-          status: alarmMap[alarmType] ? alarmMap[alarmType] : "Unknown Alarm",
+          alarm: alarmMap[alarmType] ? alarmMap[alarmType] : null,
         }
       })
 

@@ -32,7 +32,7 @@ router.get("/", async (req, res) => {
       )
 
       const rawList = vehicleListXml["ArrayOfString"]["string"]
-      vehicles = rawList.map((entry) => {
+      vehicles = rawList?.map((entry) => {
         const [vehId, regNo, vehSerial] = entry.split(",")
         return { vehId, regNo, vehSerial }
       })
@@ -40,11 +40,11 @@ router.get("/", async (req, res) => {
 
     // Enrich each vehicle with last location info
     const enrichedVehicles = await Promise.all(
-      vehicles.map(async (vehicle) => {
+      vehicles?.map(async (vehicle) => {
         try {
           const lastXml = await fetchXml(
             `${process.env.BASE_URL}/AndroidInterface.asmx/GetLastVehicleByVehID`,
-            { vehID: vehicle.vehId }
+            { vehID: vehicle?.vehId }
           )
 
           const rawData = lastXml.string?._ || ""

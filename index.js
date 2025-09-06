@@ -9,7 +9,8 @@ import registerFCMRouter from "./routes/registerFCM.js"
 import trackRouter from "./routes/track.js"
 import devicesRouter from "./routes/devices.js"
 import playbackRouter from "./routes/playback.js"
-import alertsRouter from "./routes/alertsDB.js"
+import alertsRouter from "./routes/alerts.js"
+import fuelRouter from "./routes/fuel.js"
 
 import { startFuelMonitor } from "./services/fuelMonitoring.js"
 import { FleetManager } from "./services/FleetManager.js"
@@ -39,6 +40,7 @@ app.use("/registerFCM", registerFCMRouter)
 app.use("/track", trackRouter)
 app.use("/devices", devicesRouter)
 app.use("/playback", playbackRouter)
+app.use("/fuel", fuelRouter)
 app.use("/alerts", alertsRouter)
 
 // Default route
