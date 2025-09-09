@@ -8,7 +8,7 @@ const alertSchema = new mongoose.Schema({
     lat: { type: Number },
     lng: { type: Number },
   },
-  number_plate: { type: String, required: true },
+  number_plate: { type: String },
 })
 
 const vehicleSchema = new mongoose.Schema({

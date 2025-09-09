@@ -178,7 +178,7 @@ const notificationWorker = new Worker(
       }
     }
   },
-  { connection, concurrency: 50 }
+  { connection }
 )
 
 notificationWorker.on("failed", (job, err) => {

@@ -52,7 +52,7 @@ const alarmWorker = new Worker(
       })
     }
   },
-  { connection, concurrency: 50 }
+  { connection }
 )
 
 alarmWorker.on("failed", (job, err) => {
