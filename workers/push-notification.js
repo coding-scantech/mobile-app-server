@@ -159,17 +159,9 @@ const notificationWorker = new Worker(
       return
     }
 
-    // 2. Find the vehicle object to get number_plate
-    const vehicle = client.vehicles.find((v) => v.device_serial === alarm.vehId)
+    const { client_id, ...alarmWithoutClientId } = alarm
 
-    const number_plate = vehicle?.number_plate || "Unknown"
-
-    const enrichedAlarm = {
-      ...alarm,
-      number_plate,
-    }
-
-    client.alerts.push(enrichedAlarm)
+    client.alerts.push(alarmWithoutClientId)
 
     if (client.alerts.length > 200) {
       client.alerts = client.alerts.slice(-200) // keep only last 200
@@ -179,13 +171,10 @@ const notificationWorker = new Worker(
 
     for (const token of client.fcm_tokens) {
       try {
-        await sendPushNotification(enrichedAlarm, token)
-        console.log(`✅ Sent notification for ${number_plate} to ${token}`)
+        await sendPushNotification(alarmWithoutClientId, token)
+        console.log(`✅ Sent FCM notification `)
       } catch (err) {
-        console.error(
-          `❌ Failed to send notification to ${token}:`,
-          err.message
-        )
+        console.error(`❌ Failed to send FCM notification:`, err.message)
       }
     }
   },

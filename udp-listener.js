@@ -2,6 +2,7 @@ import dgram from "dgram"
 import { Queue } from "bullmq"
 import { connection } from "./redis.js"
 import dotenv from "dotenv"
+import { Client } from "./models/Client.js"
 
 dotenv.config()
 
@@ -14,6 +15,30 @@ export const alarmQueue = new Queue("alarmQueue", { connection })
 
 //  ------------- UDP scocket setup -----------------
 const client = dgram.createSocket("udp4")
+
+// ------------- Client list ------------------
+let clientsCache = []
+
+async function refreshClientsCache() {
+  try {
+    const clients = await Client.find({})
+
+    // Flatten into a lookup array: {vehId, number_plate, clientId}
+    clientsCache = clients.flatMap((c) =>
+      c.vehicles.map((v) => ({
+        client_id: c._id.toString(),
+        device_serial: v.device_serial,
+        number_plate: v.number_plate,
+      }))
+    )
+
+    console.log(`✅ Clients cache updated with ${clientsCache.length} vehicles`)
+  } catch (err) {
+    console.error("❌ Failed to refresh clients cache:", err.message)
+  }
+}
+
+setInterval(refreshClientsCache, 30 * 60 * 1000) // 30 min
 
 // 1. Initiate handshake
 
@@ -78,10 +103,20 @@ client.on("message", async (msg, rinfo) => {
     try {
       const data = parseGISPosReq(msg)
 
-      console.log("📍:", data)
+      const vehicle = clientsCache.find((v) => v.device_serial === data.vehId)
+
+      if (!vehicle) return
+
+      const enrichedData = {
+        ...data,
+        number_plate: vehicle.number_plate,
+        client_id: vehicle.client_id,
+      }
+
+      console.log("📍:", enrichedData)
 
       // Add to queue that checks if it is an alarm
-      await alarmQueue.add("alarm", data, {
+      await alarmQueue.add("alarm", enrichedData, {
         removeOnComplete: true,
         removeOnFail: true,
       })
@@ -122,6 +157,12 @@ client.on("listening", () => {
     )
   }, 20000)
 })
+;(async () => {
+  await refreshClientsCache()
 
-// Start socket
-client.bind()
+  // Refresh every 30 minutes
+  setInterval(refreshClientsCache, 30 * 60 * 1000)
+
+  // Start socket
+  client.bind()
+})()

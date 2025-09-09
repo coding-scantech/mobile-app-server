@@ -6,26 +6,6 @@ import { connection } from "../redis.js"
 
 export const notificationQueue = new Queue("notificationQueue", { connection })
 
-// const alarmTable = {
-//   1: "SoSAlarm",
-//   29: "SoSAlarm",
-//   2: "Speed Alarm",
-//   130: "Speed Alarm",
-//   3: "Distance Alarm",
-//   131: "Distance Alarm",
-//   4: "GSM Signal Alarm",
-//   132: "GSM Signal Alarm",
-//   9: "Power Alarm",
-//   137: "Power Alarm",
-//   10: "Power Low",
-//   138: "Power Low",
-//   15: "Tamper Alarm",
-//   143: "Tamper Alarm",
-//   16: "GPS Signal Alarm",
-//   144: "GPS Signal Alarm",
-//   128: "Normal",
-// }
-
 async function storeAndCheckAlarm(packet, connection) {
   const key = `vehicle:${packet.vehId}:history`
 
@@ -47,6 +27,8 @@ async function storeAndCheckAlarm(packet, connection) {
       alarm: latest.alarm,
       time: packet.time,
       location: { lat: packet.lat, lng: packet.lng },
+      number_plate: packet.number_plate,
+      client_id: packet.client_id,
     }
   }
 
