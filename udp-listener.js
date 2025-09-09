@@ -10,7 +10,7 @@ const SERVER_PORT = process.env.SERVER_PORT
 
 // ---------- Bull setup -----------
 
-export const notificationQueue = new Queue("notificationQueue", { connection })
+export const alarmQueue = new Queue("alarmQueue", { connection })
 
 //  ------------- UDP scocket setup -----------------
 const client = dgram.createSocket("udp4")
@@ -55,6 +55,8 @@ function parseGISPosReq(buf) {
 
   const time = Date.now()
 
+  const fuel = buf.readUInt16LE(buf.length - 2)
+
   return {
     vehId,
     time,
@@ -64,6 +66,7 @@ function parseGISPosReq(buf) {
     angle,
     lng,
     lat,
+    fuel,
   }
 }
 
@@ -73,17 +76,17 @@ function parseGISPosReq(buf) {
 client.on("message", async (msg, rinfo) => {
   if (msg.length > 4) {
     try {
-      const alarm = parseGISPosReq(msg)
+      const data = parseGISPosReq(msg)
 
-      // Add to queue
-      console.log("📍:", alarm)
+      console.log("📍:", data)
 
-      await notificationQueue.add("notification", alarm, {
+      // Add to queue that checks if it is an alarm
+      await alarmQueue.add("alarm", data, {
         removeOnComplete: true,
         removeOnFail: true,
       })
     } catch (err) {
-      console.log("Unknown payload")
+      return
     }
   }
 })
@@ -91,6 +94,7 @@ client.on("message", async (msg, rinfo) => {
 // Send first packet
 client.on("listening", () => {
   console.log("UDP client started. Sending handshake...")
+
   const handshake = buildHandshakeReq()
 
   client.send(
@@ -101,7 +105,6 @@ client.on("listening", () => {
     SERVER_HOST,
     (err, bytes) => {
       if (err) console.error("Handshake send error:", err)
-      else console.log("Handshake sent, Bytes received :", bytes)
     }
   )
 
@@ -115,7 +118,6 @@ client.on("listening", () => {
       SERVER_HOST,
       (err, bytes) => {
         if (err) console.error("Handshake resend error:", err)
-        else console.log("⏱️ Handshake resent, Bytes sent:", bytes)
       }
     )
   }, 20000)

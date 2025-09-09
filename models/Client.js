@@ -2,13 +2,12 @@ import mongoose from "mongoose"
 
 const alertSchema = new mongoose.Schema({
   vehId: { type: String },
-  time: { type: Number, required: true },
-  acc: { type: String, required: true },
   alarm: { type: Number, required: true },
-  speed: { type: Number },
-  angle: { type: Number },
-  lat: { type: Number, required: true },
-  lng: { type: Number, required: true },
+  time: { type: Number, required: true },
+  location: {
+    lat: { type: Number },
+    lng: { type: Number },
+  },
   number_plate: { type: String, required: true },
 })
 
@@ -16,6 +15,12 @@ const vehicleSchema = new mongoose.Schema({
   veh_id: { type: String, required: true },
   number_plate: { type: String, required: true },
   device_serial: { type: String, required: true },
+  fuel_history: [
+    {
+      time: { type: Date },
+      litres: { type: Number },
+    },
+  ],
   next_service: { type: Date },
 })
 

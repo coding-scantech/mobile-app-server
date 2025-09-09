@@ -144,11 +144,11 @@ async function sendPushNotification(alarm, token) {
 const notificationWorker = new Worker(
   "notificationQueue",
   async (job) => {
+    console.log("📥 Notification job received:", job.data)
+
     const alarm = job.data
 
     // 1. Find the client who owns this vehicle
-
-    console.log(alarm)
 
     const client = await Client.findOne({
       "vehicles.device_serial": alarm.vehId,
@@ -161,6 +161,7 @@ const notificationWorker = new Worker(
 
     // 2. Find the vehicle object to get number_plate
     const vehicle = client.vehicles.find((v) => v.device_serial === alarm.vehId)
+
     const number_plate = vehicle?.number_plate || "Unknown"
 
     const enrichedAlarm = {

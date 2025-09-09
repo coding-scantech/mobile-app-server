@@ -16,6 +16,7 @@ import { startFuelMonitor } from "./services/fuelMonitoring.js"
 import { FleetManager } from "./services/FleetManager.js"
 
 import "./workers/push-notification.js"
+import "./workers/alarm-detection.js"
 import "./udp-listener.js"
 
 dotenv.config()
