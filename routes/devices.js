@@ -21,7 +21,7 @@ function isOnline(timestampStr) {
   const lastTime = new Date(timestampStr)
   const now = new Date()
   const diffMs = now - lastTime
-  return diffMs <= 1 * 60 * 1000 // 1 minutes
+  return diffMs <= 2 * 60 * 1000 // 2 minutes
 }
 
 // GET /devices
@@ -106,7 +106,7 @@ router.get("/", async (req, res) => {
             location: { lat: parseFloat(lat), lng: parseFloat(lng) },
             speed: Number(speed),
             angle: Number(angle),
-            accStatus: acc === "11" ? "ON" : "OFF",
+            accStatus: acc === "11" ? "ON" : acc === "12" ? "OFF" : "UNKNOWN",
             fuel: fuelRaw ? Number(fuelRaw.replace("L;", "").trim()) : null,
             timestamp,
             online: isOnline(timestamp),

@@ -72,7 +72,7 @@ router.get("/", async (req, res) => {
             regNo,
             location: { lat: parseFloat(lat), lng: parseFloat(lng) },
             speed: Number(speed),
-            accStatus: acc === "11" ? "ON" : "OFF",
+            accStatus: acc === "11" ? "ON" : acc == "12" ? "OFF" : "UNDEFINED",
             fuel: Number(fuel),
             timestamp,
             angle: Number(angle),
