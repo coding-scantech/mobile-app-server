@@ -13,7 +13,7 @@ const alertSchema = new mongoose.Schema({
 
 const vehicleSchema = new mongoose.Schema({
   veh_id: { type: String, required: true },
-  number_plate: { type: String, required: true },
+  number_plate: { type: String },
   device_serial: { type: String, required: true },
   fuel_history: [
     {
