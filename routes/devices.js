@@ -24,6 +24,25 @@ function isOnline(timestampStr) {
   return diffMs <= 2 * 60 * 1000 // 2 minutes
 }
 
+function decimalToBinary(N) {
+  let binary = ""
+
+  while (N > 0) {
+    binary = (N % 2) + binary
+    N = Math.floor(N / 2)
+  }
+
+  return binary.padStart(8, "0")
+}
+
+function checkSixthBit(num) {
+  let binary = decimalToBinary(num)
+
+  let bit = binary[1]
+
+  return bit === "1" ? "ON" : "OFF"
+}
+
 // GET /devices
 router.get("/", async (req, res) => {
   const { email } = req.query
@@ -106,7 +125,8 @@ router.get("/", async (req, res) => {
             location: { lat: parseFloat(lat), lng: parseFloat(lng) },
             speed: Number(speed),
             angle: Number(angle),
-            accStatus: acc === "11" ? "ON" : acc === "12" ? "OFF" : "UNKNOWN",
+            accStatus:
+              acc === "11" ? "ON" : acc === "12" ? "OFF" : checkSixthBit(__5),
             fuel: fuelRaw ? Number(fuelRaw.replace("L;", "").trim()) : null,
             timestamp,
             online: isOnline(timestamp),

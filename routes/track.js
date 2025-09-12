@@ -15,6 +15,25 @@ async function fetchXml(url, body) {
   return parseStringPromise(text)
 }
 
+function decimalToBinary(N) {
+  let binary = ""
+
+  while (N > 0) {
+    binary = (N % 2) + binary
+    N = Math.floor(N / 2)
+  }
+
+  return binary.padStart(8, "0")
+}
+
+function checkSixthBit(num) {
+  let binary = decimalToBinary(num)
+
+  let bit = binary[1]
+
+  return bit === "1" ? "ON" : "OFF"
+}
+
 router.get("/", async (req, res) => {
   try {
     const { vehID, email } = req.query
@@ -72,7 +91,8 @@ router.get("/", async (req, res) => {
             regNo,
             location: { lat: parseFloat(lat), lng: parseFloat(lng) },
             speed: Number(speed),
-            accStatus: acc === "11" ? "ON" : acc == "12" ? "OFF" : "UNDEFINED",
+            accStatus:
+              acc === "11" ? "ON" : acc == "12" ? "OFF" : checkSixthBit(_5),
             fuel: Number(fuel),
             timestamp,
             angle: Number(angle),
