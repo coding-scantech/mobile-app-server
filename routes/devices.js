@@ -1,6 +1,7 @@
 import express from "express"
 import fetch from "node-fetch"
 import { parseStringPromise } from "xml2js"
+import { Client } from "../models/Client.js"
 
 const router = express.Router()
 
@@ -59,6 +60,20 @@ router.get("/", async (req, res) => {
       return { vehId, regNo, vehSerial }
     })
 
+    // 2. Fetch Mongo client doc once (to avoid multiple DB roundtrips)
+    const clientDoc = await Client.findOne({ email }).lean()
+
+    // Map device_serials → quick lookup
+    const vehicleMap = new Map()
+    if (clientDoc) {
+      for (const v of clientDoc.vehicles) {
+        vehicleMap.set(v.device_serial, {
+          engine_deactivated: v.engine_deactivated,
+          next_service: v.next_service,
+        })
+      }
+    }
+
     // Step 2: Fetch details + last location
     const detailedVehicles = await Promise.all(
       vehicles.map(async (vehicle) => {
@@ -110,6 +125,8 @@ router.get("/", async (req, res) => {
             fuelRaw,
           ] = lastLocStr.split(",")
 
+          const extra = vehicleMap.get(vehicle.vehSerial) || {}
+
           return {
             ...vehicle,
             color,
@@ -130,6 +147,8 @@ router.get("/", async (req, res) => {
             fuel: fuelRaw ? Number(fuelRaw.replace("L;", "").trim()) : null,
             timestamp,
             online: isOnline(timestamp),
+            engine_deactivated: extra.engine_deactivated ?? false, // ✅ added
+            next_service: extra.next_service ?? null, // ✅ added
           }
         } catch (err) {
           console.error(`Error fetching data for vehID ${vehicle.vehId}`, err)

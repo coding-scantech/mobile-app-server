@@ -22,6 +22,7 @@ const vehicleSchema = new mongoose.Schema({
     },
   ],
   next_service: { type: Date },
+  engine_deactivated: { type: Boolean, default: false },
 })
 
 // Mongoose schema + model

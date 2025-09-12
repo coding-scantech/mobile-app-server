@@ -1,3 +1,93 @@
+// import express from "express"
+// import fetch from "node-fetch"
+// import { parseStringPromise } from "xml2js"
+// import { Client } from "../models/Client.js"
+
+// const router = express.Router()
+
+// // Helper to fetch and parse XML
+// async function fetchXml(url, body) {
+//   const response = await fetch(url, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/x-www-form-urlencoded" },
+//     body: new URLSearchParams(body).toString(),
+//   })
+//   const text = await response.text()
+//   return parseStringPromise(text)
+// }
+
+// router.post("/", async (req, res) => {
+//   const { account, pwd } = req.body
+
+//   if (!account || !pwd) {
+//     return res.status(400).json({ error: "Account and Password required" })
+//   }
+
+//   try {
+//     // 1. Authenticate with remote service
+//     const xml = await fetchXml(
+//       `${process.env.BASE_URL}AndroidInterface.asmx/UserLoginNew`,
+//       { account, pwd }
+//     )
+
+//     // xml is parsed object like { string: { _: "0#23,fuel testing" } }
+//     const raw = xml?.string?._ || ""
+//     const [status, details] = raw.split("#")
+
+//     if (status !== "0") {
+//       return res.status(401).json({ error: "Invalid credentials" })
+//     }
+
+//     const [userId, name] = details.split(",")
+
+//     const vehiclesXml = await fetchXml(
+//       `${process.env.BASE_URL}AndroidInterface.asmx/GetVehicleByGroupForMobile`,
+//       { email: account }
+//     )
+
+//     const vehicleStrings = vehiclesXml?.ArrayOfString?.string || []
+
+//     const vehiclesParsed = vehicleStrings.map((entry) => {
+//       const [veh_id, number_plate, device_serial] = entry.split(",")
+//       return { veh_id, number_plate, device_serial }
+//     })
+
+//     // 2. Check if Client collection exists
+//     let client = await Client.findOne({ email: account })
+
+//     // Find the vehicles using the email=account
+
+//     if (!client) {
+//       // Create new if not exists
+//       client = new Client({
+//         pwd,
+//         email: account,
+//         name,
+//         vehicles: vehiclesParsed,
+//       })
+//     } else {
+//       client.vehicles = vehiclesParsed
+//       client.name = name
+//       client.pwd = pwd
+//     }
+
+//     await client.save()
+
+//     // 3. Return id + email
+//     return res.json({
+//       id: client._id,
+//       name: client.name,
+//       email: client.email,
+//       pwd: client.pwd,
+//     })
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({ error: "Server error" })
+//   }
+// })
+
+// export default router
+
 import express from "express"
 import fetch from "node-fetch"
 import { parseStringPromise } from "xml2js"
@@ -16,6 +106,32 @@ async function fetchXml(url, body) {
   return parseStringPromise(text)
 }
 
+// Sync vehicles: only update changed fields
+function syncVehicles(existing, incoming) {
+  const updated = [...existing]
+
+  incoming.forEach((incVeh) => {
+    const match = updated.find((v) => v.device_serial === incVeh.device_serial)
+
+    if (match) {
+      // Update fields if they changed
+      if (match.veh_id !== incVeh.veh_id) match.veh_id = incVeh.veh_id
+      if (match.number_plate !== incVeh.number_plate)
+        match.number_plate = incVeh.number_plate
+    } else {
+      // New vehicle → push it
+      updated.push(incVeh)
+    }
+  })
+
+  // Optionally: remove vehicles that no longer exist remotely
+  const filtered = updated.filter((v) =>
+    incoming.some((inc) => inc.device_serial === v.device_serial)
+  )
+
+  return filtered
+}
+
 router.post("/", async (req, res) => {
   const { account, pwd } = req.body
 
@@ -30,7 +146,6 @@ router.post("/", async (req, res) => {
       { account, pwd }
     )
 
-    // xml is parsed object like { string: { _: "0#23,fuel testing" } }
     const raw = xml?.string?._ || ""
     const [status, details] = raw.split("#")
 
@@ -40,22 +155,20 @@ router.post("/", async (req, res) => {
 
     const [userId, name] = details.split(",")
 
+    // 2. Fetch vehicles from remote
     const vehiclesXml = await fetchXml(
       `${process.env.BASE_URL}AndroidInterface.asmx/GetVehicleByGroupForMobile`,
       { email: account }
     )
 
     const vehicleStrings = vehiclesXml?.ArrayOfString?.string || []
-
     const vehiclesParsed = vehicleStrings.map((entry) => {
       const [veh_id, number_plate, device_serial] = entry.split(",")
       return { veh_id, number_plate, device_serial }
     })
 
-    // 2. Check if Client collection exists
+    // 3. Check if Client exists
     let client = await Client.findOne({ email: account })
-
-    // Find the vehicles using the email=account
 
     if (!client) {
       // Create new if not exists
@@ -66,18 +179,22 @@ router.post("/", async (req, res) => {
         vehicles: vehiclesParsed,
       })
     } else {
-      client.vehicles = vehiclesParsed
+      // Always update name & pwd
       client.name = name
       client.pwd = pwd
+
+      // Update vehicles selectively
+      client.vehicles = syncVehicles(client.vehicles, vehiclesParsed)
     }
 
     await client.save()
 
-    // 3. Return id + email
+    // 4. Return minimal client info
     return res.json({
       id: client._id,
       name: client.name,
       email: client.email,
+      pwd: client.pwd,
     })
   } catch (err) {
     console.error(err)

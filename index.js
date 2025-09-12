@@ -11,6 +11,7 @@ import devicesRouter from "./routes/devices.js"
 import playbackRouter from "./routes/playback.js"
 import alertsRouter from "./routes/alerts.js"
 import fuelRouter from "./routes/fuel.js"
+import engineControlRouter from "./routes/engineControl.js"
 
 import { startFuelMonitor } from "./services/fuelMonitoring.js"
 import { FleetManager } from "./services/FleetManager.js"
@@ -43,6 +44,7 @@ app.use("/devices", devicesRouter)
 app.use("/playback", playbackRouter)
 app.use("/fuel", fuelRouter)
 app.use("/alerts", alertsRouter)
+app.use("/engineControl", engineControlRouter)
 
 // Default route
 app.get("/", (req, res) => {
