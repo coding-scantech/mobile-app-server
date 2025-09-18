@@ -141,40 +141,183 @@ async function sendPushNotification(alarm, token) {
   console.log(" FCM Response:", response.data)
 }
 
+async function sendFuelPushNotification(fuelData, token) {
+  console.log(fuelData)
+  const auth = new GoogleAuth({
+    credentials: serviceKey,
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+  })
+
+  const client = await auth.getClient()
+  const accessToken = await client.getAccessToken()
+
+  // Format times (optional: use a date library like dayjs if you want pretty times)
+  const startTimeStr = new Date(fuelData.extra.startTime).toLocaleString()
+  const endTimeStr = new Date(fuelData.extra.endTime).toLocaleString()
+
+  // Pick notification title & body based on event type
+  let title, body
+  if (fuelData.alarm === 0) {
+    title = "Fuel dropping"
+    body = `Your vehicle ${
+      fuelData.number_plate
+    } has lost ${fuelData.extra.litres.toFixed(
+      1
+    )} L of fuel. Level went from ${fuelData.extra.startFuel.toFixed(
+      1
+    )} L at ${startTimeStr} to ${fuelData.extra.endFuel.toFixed(
+      1
+    )} L at ${endTimeStr}. Click to view location.`
+  } else {
+    title = "Fuel top-up"
+    body = `Your vehicle ${
+      fuelData.number_plate
+    } has been topped up with ${fuelData.extra.litres.toFixed(
+      1
+    )} L of fuel. Level went from ${fuelData.extra.startFuel.toFixed(
+      1
+    )} L at ${startTimeStr} to ${fuelData.extra.endFuel.toFixed(
+      1
+    )} L at ${endTimeStr}. Click to view location.`
+  }
+
+  const link = `https://www.google.com/maps?q=${fuelData.location.lat},${fuelData.location.lng}`
+
+  const message = {
+    validate_only: false,
+    message: {
+      token,
+      notification: {
+        title,
+        body,
+      },
+      data: {
+        link,
+      },
+    },
+  }
+
+  const response = await axios.post(
+    `https://fcm.googleapis.com/v1/projects/${serviceKey.project_id}/messages:send`,
+    message,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken.token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  )
+
+  console.log(" FCM Response:", response.data)
+}
+
 const notificationWorker = new Worker(
   "notificationQueue",
   async (job) => {
-    console.log("📥 Notification job received:", job.data)
+    console.log("📥 Notification job received:", job.name, job.data)
 
-    const alarm = job.data
+    if (job.name === "notification") {
+      const alarm = job.data
 
-    // 1. Find the client who owns this vehicle
+      const client = await Client.findOne({
+        "vehicles.device_serial": alarm.vehId,
+      })
 
-    const client = await Client.findOne({
-      "vehicles.device_serial": alarm.vehId,
-    })
+      if (!client) {
+        console.warn(`⚠️ No client found for vehId: ${alarm.vehId}`)
+        return
+      }
 
-    if (!client) {
-      console.warn(`⚠️ No client found for vehId: ${alarm.vehId}`)
-      return
-    }
+      const { client_id, ...alarmWithoutClientId } = alarm
 
-    const { client_id, ...alarmWithoutClientId } = alarm
+      client.alerts.push(alarmWithoutClientId)
 
-    client.alerts.push(alarmWithoutClientId)
+      if (client.alerts.length > 200) {
+        client.alerts = client.alerts.slice(-200) // keep only last 200
+      }
 
-    if (client.alerts.length > 200) {
-      client.alerts = client.alerts.slice(-200) // keep only last 200
-    }
+      await client.save()
 
-    await client.save()
+      for (const token of client.fcm_tokens) {
+        if (token.logged_in) {
+          try {
+            await sendPushNotification(alarmWithoutClientId, token.token)
+            console.log(`✅ Sent FCM notification to ${token.token}`)
+          } catch (err) {
+            console.error(`❌ Failed to send FCM notification:`, err.message)
+          }
+        } else {
+          console.log(`⏭️ Skipped token ${token.token} (not logged in)`)
+        }
+      }
+    } else if (job.name === "fuel-notification") {
+      const fuelData = job.data
 
-    for (const token of client.fcm_tokens) {
-      try {
-        await sendPushNotification(alarmWithoutClientId, token)
-        console.log(`✅ Sent FCM notification `)
-      } catch (err) {
-        console.error(`❌ Failed to send FCM notification:`, err.message)
+      console.log(fuelData)
+
+      const client = await Client.findOne({
+        "vehicles.device_serial": fuelData.vehId,
+      })
+
+      if (!client) {
+        console.warn(`⚠️ No client found for vehId: ${fuelData.vehId}`)
+        return
+      }
+
+      client.alerts.push({
+        vehId: fuelData.vehId,
+        alarm: fuelData.type === "Siphon" ? 0 : 99, // Siphon 0 , Refuel 1
+        time: Date.now(),
+        location: {
+          lat: fuelData.location.lat,
+          lng: fuelData.location.lng,
+        },
+        number_plate: fuelData.number_plate,
+        extra: JSON.stringify({
+          litres: fuelData.litersChanged,
+          startTime: fuelData.startTime,
+          endTime: fuelData.endTime,
+          startFuel: fuelData.startFuel,
+          endFuel: fuelData.endFuel,
+        }),
+      })
+
+      if (client.alerts.length > 200) {
+        client.alerts = client.alerts.slice(-200) // keep only last 200
+      }
+
+      await client.save()
+
+      for (const token of client.fcm_tokens) {
+        if (token.logged_in) {
+          try {
+            await sendFuelPushNotification(
+              {
+                vehId: fuelData.vehId,
+                alarm: fuelData.type === "Siphon" ? 0 : 99, // Siphon 0 , Refuel 1
+                time: Date.now(),
+                location: {
+                  lat: fuelData.location.lat,
+                  lng: fuelData.location.lng,
+                },
+                number_plate: fuelData.number_plate,
+                extra: {
+                  litres: fuelData.litersChanged,
+                  startTime: fuelData.startTime,
+                  endTime: fuelData.endTime,
+                  startFuel: fuelData.startFuel,
+                  endFuel: fuelData.endFuel,
+                },
+              },
+              token.token
+            )
+            console.log(`✅ Sent FCM notification to ${token.token}`)
+          } catch (err) {
+            console.error(`❌ Failed to send FCM notification:`, err.message)
+          }
+        } else {
+          console.log(`⏭️ Skipped token ${token.token} (not logged in)`)
+        }
       }
     }
   },

@@ -39,14 +39,29 @@ async function storeAndCheckAlarm(packet, connection) {
 const alarmWorker = new Worker(
   "alarmQueue",
   async (job) => {
-    const packet = job.data
+    // Incoming alarms
+    if (job.name === "alarm") {
+      const packet = job.data
 
-    const alarm = await storeAndCheckAlarm(packet, connection)
+      const alarm = await storeAndCheckAlarm(packet, connection)
 
-    if (alarm) {
-      console.log("🚨 Alarm detected:", alarm)
+      if (alarm) {
+        console.log("🚨 Alarm detected:", alarm)
 
-      await notificationQueue.add("notification", alarm, {
+        await notificationQueue.add("notification", alarm, {
+          removeOnComplete: true,
+          removeOnFail: true,
+        })
+      }
+    }
+
+    // Fuel tracking
+    if (job.name === "fuel") {
+      const fuelEvent = job.data
+      console.log("⛽ Fuel event detected:", fuelEvent)
+
+      // 👉 You can also push this into notificationQueue if you want
+      await notificationQueue.add("fuel-notification", fuelEvent, {
         removeOnComplete: true,
         removeOnFail: true,
       })

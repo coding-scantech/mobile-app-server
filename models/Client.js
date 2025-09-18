@@ -9,6 +9,7 @@ const alertSchema = new mongoose.Schema({
     lng: { type: Number },
   },
   number_plate: { type: String },
+  extra: { type: String },
 })
 
 const vehicleSchema = new mongoose.Schema({
@@ -30,7 +31,12 @@ const clientSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   pwd: { type: String, required: true },
-  fcm_tokens: [{ type: String }],
+  fcm_tokens: [
+    {
+      token: { type: String },
+      logged_in: { type: Boolean },
+    },
+  ],
   alerts: [alertSchema], // an array of alerts
   vehicles: [vehicleSchema],
 })

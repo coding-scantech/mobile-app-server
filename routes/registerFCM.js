@@ -17,8 +17,11 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ error: "Client not found" })
     }
 
-    if (!client.fcm_tokens.includes(fcmToken)) {
-      client.fcm_tokens.push(fcmToken)
+    if (!client.fcm_tokens.map(({ token }) => token).includes(fcmToken)) {
+      client.fcm_tokens.push({
+        token: fcmToken,
+        logged_in: true,
+      })
       await client.save()
     }
 
