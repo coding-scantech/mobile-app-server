@@ -352,6 +352,7 @@ import { Queue } from "bullmq"
 import { connection } from "./redis.js"
 import dotenv from "dotenv"
 import { Client } from "./models/Client.js"
+import { parseStringPromise } from "xml2js"
 
 dotenv.config()
 
@@ -368,18 +369,87 @@ export const client = dgram.createSocket("udp4")
 // ------------- Client list ------------------
 let clientsCache = []
 
+async function getMaxV(vehID) {
+  const res = await fetch(
+    `${process.env.BASE_URL}AndroidInterface.asmx/GetVolAndOilByVehID?vehID=${vehID}`
+  )
+
+  if (!res.ok) {
+    throw new Error(`HTTP error ${res.status}`)
+  }
+
+  const xml = await res.text()
+  const result = await parseStringPromise(xml)
+
+  // Ensure rawString is a string
+  const rawString = String(result?.string?._ || result?.string || "").trim()
+
+  if (!rawString) {
+    // Empty <string> -> return 0
+    return 0
+  }
+
+  // rawString looks like "150#1#0#0#0#100#1#0#0#0"
+  const firstValue = rawString.split("#")[0]
+
+  // Ensure it's a number, fallback to 0
+  const parsed = Number(firstValue)
+  return isNaN(parsed) ? 0 : parsed
+}
+
+async function getTankSize(vehID) {
+  const res = await fetch(
+    `${process.env.BASE_URL}AndroidInterface.asmx/GetLastVehicleByVehID?vehID=${vehID}`
+  )
+
+  if (!res.ok) {
+    throw new Error(`HTTP error ${res.status}`)
+  }
+
+  const xml = await res.text()
+
+  // Parse XML
+  const result = await parseStringPromise(xml)
+
+  console.log(result?.string?._)
+
+  // Get the <string> node content
+  const rawString = result?.string?._ || result?.string
+  if (!rawString) {
+    throw new Error("Invalid response: <string> not found")
+  }
+
+  // rawString example:
+  // "419,Testbench,36.8293533325195,-1.27739012241364,0,332,128,9/19/2025 11:13:03 AM,14,0,-200,10,67,1L;"
+
+  // Split by comma
+  const parts = rawString.split(",")
+
+  const tankSize = parts[11]
+
+  return Number(tankSize)
+}
+
 async function refreshClientsCache() {
   try {
     const clients = await Client.find({})
 
+    console.log(clients)
+
     // Flatten into a lookup array: {vehId, number_plate, clientId}
-    clientsCache = clients.flatMap((c) =>
-      c.vehicles.map((v) => ({
-        client_id: c._id.toString(),
-        device_serial: v.device_serial,
-        number_plate: v.number_plate,
-      }))
+    clientsCache = await Promise.all(
+      clients.flatMap((c) =>
+        c.vehicles.map(async (v) => ({
+          client_id: c._id.toString(),
+          device_serial: v.device_serial,
+          number_plate: v.number_plate,
+          max_fuel_voltage: await getMaxV(v.veh_id),
+          tank_size: await getTankSize(v.veh_id),
+        }))
+      )
     )
+
+    console.log(clientsCache)
 
     console.log(`✅ Clients cache updated with ${clientsCache.length} vehicles`)
   } catch (err) {
@@ -535,7 +605,6 @@ async function parseGISPosReq(buf) {
     angle,
     lng,
     lat,
-    fuel,
   }
 
   const vehicle = clientsCache.find((v) => v.device_serial === data.vehId)
@@ -544,9 +613,12 @@ async function parseGISPosReq(buf) {
 
   const enrichedData = {
     ...data,
+    fuel: (fuel / vehicle.max_fuel_voltage) * vehicle.tank_size,
     number_plate: vehicle.number_plate,
     client_id: vehicle.client_id,
   }
+
+  console.log(fuel, vehicle.max_fuel_voltage, vehicle.tank_size)
 
   console.log("📍:", enrichedData)
 
