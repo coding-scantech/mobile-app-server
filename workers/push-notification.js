@@ -157,7 +157,7 @@ async function sendFuelPushNotification(fuelData, token) {
 
   // Pick notification title & body based on event type
   let title, body
-  if (fuelData.alarm === 0) {
+  if (fuelData.alarm === 100) {
     title = "Fuel dropping"
     body = `Your vehicle ${
       fuelData.number_plate
@@ -266,7 +266,7 @@ const notificationWorker = new Worker(
 
       client.alerts.push({
         vehId: fuelData.vehId,
-        alarm: fuelData.type === "Siphon" ? 0 : 99, // Siphon 0 , Refuel 1
+        alarm: fuelData.type === "Siphon" ? 100 : 99, // Siphon 100 , Refuel 99
         time: Date.now(),
         location: {
           lat: fuelData.location.lat,
@@ -294,7 +294,7 @@ const notificationWorker = new Worker(
             await sendFuelPushNotification(
               {
                 vehId: fuelData.vehId,
-                alarm: fuelData.type === "Siphon" ? 0 : 99, // Siphon 0 , Refuel 1
+                alarm: fuelData.type === "Siphon" ? 100 : 99, // Siphon 100 , Refuel 99
                 time: Date.now(),
                 location: {
                   lat: fuelData.location.lat,
